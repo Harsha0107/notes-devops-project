@@ -562,3 +562,6 @@ By completing this project, you practice:
 - Add MongoDB backups
 - Add a staging environment
 
+## Author
+
+Harsha Vardhan
