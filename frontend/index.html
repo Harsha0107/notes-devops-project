@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes App</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="toolbar" aria-label="Notes controls">
+        <div>
+          <p class="eyebrow">DevOps Notes</p>
+          <h1>Notes App</h1>
+        </div>
+        <div class="status" id="status">Connecting...</div>
+      </section>
+
+      <section class="workspace">
+        <form class="editor" id="note-form">
+          <input type="hidden" id="note-id" />
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" maxlength="120" placeholder="Deployment checklist" required />
+
+          <label for="content">Note</label>
+          <textarea id="content" name="content" rows="8" maxlength="5000" placeholder="Write the next step..." required></textarea>
+
+          <div class="actions">
+            <button type="submit" id="save-button">Save note</button>
+            <button type="button" class="secondary" id="reset-button">New note</button>
+          </div>
+        </form>
+
+        <section class="notes-panel" aria-live="polite">
+          <div class="panel-header">
+            <h2>Your notes</h2>
+            <span id="note-count">0</span>
+          </div>
+          <div class="notes-grid" id="notes"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

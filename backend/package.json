@@ -1,15 +1,28 @@
 {
-  "name": "backend",
+  "name": "notes-backend",
   "version": "1.0.0",
+  "description": "Express API and static frontend for a DevOps notes app",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "node --test"
   },
-  "keywords": [],
+  "keywords": [
+    "notes",
+    "express",
+    "mongodb",
+    "devops"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "express": "^5.2.1"
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.0.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.4.2",
+    "supertest": "^7.1.4"
   }
 }
