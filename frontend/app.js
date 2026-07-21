@@ -17,6 +17,7 @@ let notes = [];
 let searchTerm = "";
 let sortMode = "updated";
 let pinnedNotes = JSON.parse(localStorage.getItem("pinnedNotes") || "[]");
+const apiBases = location.protocol === "file:" ? ["http://localhost:3001", "http://localhost:3000"] : [""];
 
 const templates = {
   deploy: {
@@ -168,24 +169,34 @@ function updateCharacterCount() {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  });
+  let lastError;
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.message || "Request failed");
+  for (const base of apiBases) {
+    try {
+      const response = await fetch(`${base}${path}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+        ...options,
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.message || "Request failed");
+      }
+
+      if (response.status === 204) {
+        return null;
+      }
+
+      return response.json();
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+  throw lastError;
 }
 
 async function loadNotes() {

@@ -37,6 +37,15 @@ The goal of this project is to understand the complete software deployment lifec
 - View all notes
 - Edit existing notes
 - Delete notes
+- Search notes by title or content
+- Sort notes by latest, oldest, or title
+- Pin important notes in the browser
+- Copy note text to the clipboard
+- Use quick note templates for deploy tasks, bug fixes, and learning notes
+- See character count while writing
+- Get toast messages after saving, copying, pinning, and deleting
+- Confirm before deleting a note
+- Responsive modern UI for desktop and mobile
 - Health check endpoint
 - MongoDB persistence
 - Dockerized backend and frontend
@@ -119,6 +128,8 @@ Then open:
 ```text
 http://localhost:3001
 ```
+
+Important: run the app through Docker/Express for the best experience. The frontend can be opened directly from `frontend/index.html` for a quick preview, but notes still require the backend API to be running on `localhost:3000` or `localhost:3001`.
 
 Stop the containers:
 
@@ -463,6 +474,32 @@ Run the app on another local port:
 
 ```bash
 APP_PORT=3001 docker compose up --build
+```
+
+Then open:
+
+```text
+http://localhost:3001
+```
+
+### Frontend Opens But Notes Do Not Load
+
+Make sure the backend and MongoDB containers are running:
+
+```bash
+docker compose ps
+```
+
+Check the health endpoint:
+
+```bash
+curl http://localhost:3000/health
+```
+
+If you started the app with `APP_PORT=3001`, use:
+
+```bash
+curl http://localhost:3001/health
 ```
 
 ### GitHub Actions Fails On ECR Login
