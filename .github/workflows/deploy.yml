@@ -76,49 +76,70 @@ jobs:
     needs: build-and-push
 
     steps:
+      - name: Validate deployment secrets
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          test -n "$EC2_HOST"
+          test -n "$EC2_USER"
+          test -n "$EC2_SSH_KEY"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
       - name: Deploy on EC2
-        uses: appleboy/ssh-action@v1
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REGISTRY: ${{ needs.build-and-push.outputs.registry }}
           IMAGE: ${{ needs.build-and-push.outputs.image }}
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: AWS_REGION,ECR_REGISTRY,IMAGE
-          script: |
-            set -e
-            mkdir -p ~/notes-app
-            cd ~/notes-app
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -e
 
-            cat > docker-compose.yml <<'EOF'
-            services:
-              mongo:
-                image: mongo:7
-                container_name: notes-mongo
-                volumes:
-                  - mongo-data:/data/db
-                restart: unless-stopped
+          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" "mkdir -p ~/notes-app"
 
-              backend:
-                image: ${IMAGE}
-                container_name: notes-backend
-                environment:
-                  PORT: 3000
-                  MONGO_URI: mongodb://mongo:27017/notes_app
-                ports:
-                  - "127.0.0.1:3000:3000"
-                depends_on:
-                  - mongo
-                restart: unless-stopped
+          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" "cat > ~/notes-app/docker-compose.yml" <<'EOF'
+          services:
+            mongo:
+              image: mongo:7
+              container_name: notes-mongo
+              volumes:
+                - mongo-data:/data/db
+              restart: unless-stopped
 
-            volumes:
-              mongo-data:
-            EOF
+            backend:
+              image: ${IMAGE}
+              container_name: notes-backend
+              environment:
+                PORT: 3000
+                MONGO_URI: mongodb://mongo:27017/notes_app
+              ports:
+                - "127.0.0.1:3000:3000"
+              depends_on:
+                - mongo
+              restart: unless-stopped
 
-            aws ecr get-login-password --region "$AWS_REGION" \
-              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-            IMAGE="$IMAGE" docker compose pull
-            IMAGE="$IMAGE" docker compose up -d
-            docker image prune -af
+          volumes:
+            mongo-data:
+          EOF
+
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" \
+              "if docker ps >/dev/null 2>&1; then docker login --username AWS --password-stdin '$ECR_REGISTRY'; else sudo docker login --username AWS --password-stdin '$ECR_REGISTRY'; fi"
+
+          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" \
+            "cd ~/notes-app && if docker ps >/dev/null 2>&1; then DOCKER=docker; else DOCKER='sudo docker'; fi && IMAGE='$IMAGE' \$DOCKER compose pull && IMAGE='$IMAGE' \$DOCKER compose up -d && \$DOCKER image prune -af"

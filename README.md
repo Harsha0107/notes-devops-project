@@ -64,19 +64,13 @@ EC2_SSH_KEY
 
 Launch an Ubuntu EC2 instance, open inbound ports `22`, `80`, and optionally `443`.
 
-Install Docker, AWS CLI, and Nginx:
+Install Docker and Nginx:
 
 ```bash
 sudo apt update
-sudo apt install -y docker.io docker-compose-plugin nginx awscli
+sudo apt install -y docker.io docker-compose-plugin nginx
 sudo usermod -aG docker $USER
 newgrp docker
-```
-
-Configure AWS access on the EC2 instance using an IAM role or:
-
-```bash
-aws configure
 ```
 
 Copy the Nginx config:
